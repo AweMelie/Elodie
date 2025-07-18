@@ -1,4 +1,4 @@
-const { loadReactionRoles } = require('../../utils/storageManager');
+const { loadReactionRoles } = require('../utils/storageManager');
 
 module.exports = {
   name: 'messageReactionRemove',
