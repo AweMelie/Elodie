@@ -7,7 +7,10 @@ const {
   ButtonStyle
 } = require('discord.js');
 const formatPlaceholders   = require('../../utils/formatPlaceholders');
-const { loadGlobalWelcome } = require('../../utils/storageManager');
+const {
+  loadGlobalWelcome,
+  saveGlobalWelcome
+} = require('../../utils/storageManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -22,18 +25,22 @@ module.exports = {
 
     // load or default
     const cfg = loadGlobalWelcome() || {
-      title: null,
+      title:       null,
       description: null,
-      color: '#00FFFF',
-      author: { name: null, icon_url: null },
-      footer: { text: null, icon_url: null },
-      image: { url: null },
-      thumbnail: { url: null },
-      timestamp: false
+      color:       '#00FFFF',
+      author:      { name: null, icon_url: null },
+      footer:      { text: null, icon_url: null },
+      image:       { url: null },
+      thumbnail:   { url: null },
+      timestamp:   false,
+      // new fields:
+      setupChannelId: null,
+      setupMessageId: null
     };
 
     // build preview embed
-    const preview = new EmbedBuilder().setColor(cfg.color);
+    const preview = new EmbedBuilder()
+      .setColor(cfg.color);
     if (cfg.title)       preview.setTitle(formatPlaceholders(interaction.user, interaction.guild, cfg.title));
     if (cfg.description) preview.setDescription(formatPlaceholders(interaction.user, interaction.guild, cfg.description));
     if (cfg.author.name) preview.setAuthor({ name: cfg.author.name, iconURL: cfg.author.icon_url });
@@ -42,12 +49,12 @@ module.exports = {
     if (cfg.image.url)   preview.setImage(cfg.image.url);
     if (cfg.thumbnail.url) preview.setThumbnail(cfg.thumbnail.url);
 
-    // If totally empty, give a prompt
+    // placeholder text if totally empty
     if (!cfg.title && !cfg.description) {
       preview.setDescription('This embed is empty—click an edit button to begin.');
     }
 
-    // buttons: 4 edits, then Save + Test
+    // buttons
     const labels = [
       ['setwelcdm_basics', 'Edit Title/Desc/Color', ButtonStyle.Secondary],
       ['setwelcdm_author', 'Edit Author',           ButtonStyle.Secondary],
@@ -59,14 +66,33 @@ module.exports = {
       new ButtonBuilder().setCustomId(id).setLabel(label).setStyle(style)
     );
 
-    // max 5 per row → 4 edits in row1, last 2 in row2
     const row1 = new ActionRowBuilder().addComponents(labels.slice(0, 4));
     const row2 = new ActionRowBuilder().addComponents(labels.slice(4, 6));
 
-    await interaction.reply({
+    // if we've already sent this setup message, just edit it
+    if (cfg.setupChannelId && cfg.setupMessageId) {
+      try {
+        const channel = await interaction.client.channels.fetch(cfg.setupChannelId);
+        const message = await channel.messages.fetch(cfg.setupMessageId);
+        await message.edit({ embeds: [preview], components: [row1, row2] });
+
+        // ack the slash silently
+        return interaction.reply({ content: '✅ Configuration updated in place.', flags: 64 });
+      } catch {
+        // fall through to re-create if fetch/edit fails
+      }
+    }
+
+    // first time: reply publicly and save its IDs
+    const sent = await interaction.reply({
       embeds:     [preview],
       components: [row1, row2],
-      ephemeral:  true
+      ephemeral:  false,
+      fetchReply: true
     });
+
+    cfg.setupChannelId = sent.channel.id;
+    cfg.setupMessageId = sent.id;
+    saveGlobalWelcome(cfg);
   }
 };
