@@ -9,7 +9,7 @@ module.exports = {
     const embed = new EmbedBuilder()
       .setTitle('📦 Supported Variables')
       .setDescription('Use these in event messages or embeds.\nValues are replaced dynamically.')
-      .setColor(0x9b59b6)
+      .setColor(0xFFC0CB)
       .addFields(
         {
           name: '👤 User Info',
@@ -53,7 +53,6 @@ module.exports = {
 
     await interaction.reply({
       embeds: [embed],
-      flags: 64 // ✅ Ephemeral without warning
     });
   }
 };
