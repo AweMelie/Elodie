@@ -13,8 +13,8 @@ const {
   TextInputBuilder,
   TextInputStyle
 } = require('discord.js');
-const { ensureGuildStorage } = require('./utils/storageManager');
 
+const { ensureGuildStorage, removeGuildStorage } = require('./utils/storageManager');
 const formatPlaceholders = require('./utils/formatPlaceholders');
 
 function isImageUrl(url) {
@@ -47,11 +47,18 @@ for (const folder of commandFolders) {
 const eventFiles = fs.readdirSync('./events').filter(file => file.endsWith('.js'));
 for (const file of eventFiles) {
   const event = require(`./events/${file}`);
-  client.on(event.name, (...args) => event.execute(...args));
+  if (event.once) {
+    client.once(event.name, (...args) => event.execute(...args));
+  } else {
+    client.on(event.name, (...args) => event.execute(...args));
+  }
 }
-
 client.once('ready', () => {
   console.log(`✅ Logged in as ${client.user.tag}`);
+  // ensure a storage folder exists for every guild
+  client.guilds.cache.forEach(guild => 
+    ensureGuildStorage(guild.id)
+  );
 });
 process.on('unhandledRejection', error => {
   if (
@@ -434,10 +441,6 @@ client.on('messageCreate', async message => {
   countData.lastUserId = message.author.id;
   fs.writeFileSync(countPath, JSON.stringify(countData, null, 2));
   await message.react('🌸');
-});
-
-process.on('unhandledRejection', error => {
-  console.error('Unhandled promise rejection:', error);
 });
 
 console.log('🔄 Starting bot...');

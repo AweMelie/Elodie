@@ -2,9 +2,9 @@
 const { removeGuildStorage } = require('../utils/storageManager');
 
 module.exports = {
-  name: 'guildDelete',      // <-- must match Discord.js event
+  name: 'guildDelete',
   async execute(guild) {
+    console.log('❌ guildDelete fired for', guild.id);
     removeGuildStorage(guild.id);
-    console.log(`🗑️ Removed storage for server: ${guild.name} (${guild.id})`);
   }
 };
