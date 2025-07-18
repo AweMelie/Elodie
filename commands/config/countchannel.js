@@ -1,4 +1,4 @@
-// commands/mod/countchannel.js
+// commands/config/countchannel.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {
   ensureGuildStorage,

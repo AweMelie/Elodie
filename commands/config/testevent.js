@@ -1,4 +1,4 @@
-// commands/mod/testevent.js
+// commands/config/testevent.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const {
   ensureGuildStorage,

@@ -1,4 +1,4 @@
-// commands/mod/leavechannel.js
+// commands/config/leavechannel.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {
   ensureGuildStorage,

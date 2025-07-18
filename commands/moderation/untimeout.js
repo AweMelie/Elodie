@@ -1,4 +1,4 @@
-// commands/mod/untimeout.js
+// commands/moderation/untimeout.js
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,

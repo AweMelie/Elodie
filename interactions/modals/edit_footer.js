@@ -1,0 +1,86 @@
+// interactions/modals/edit_footer.js
+const fs = require('fs');
+const path = require('path');
+const { EmbedBuilder } = require('discord.js');
+const isImageUrl       = require('../../utils/isImageUrl');
+const formatPlaceholders = require('../../utils/formatPlaceholders');
+
+module.exports = {
+  customId: 'edit_footer',
+
+  async execute(interaction) {
+    const [ , embedName ] = interaction.customId.split(':');
+    const guildId   = interaction.guild.id;
+    const embedPath = path.join(__dirname, '..', '..', 'bot-storage', guildId, 'embeds.json');
+    const trackPath = path.join(__dirname, '..', '..', 'bot-storage', guildId, 'embed-messages.json');
+
+    if (!fs.existsSync(embedPath)) {
+      return interaction.reply({ content: 'Embed not found.', flags: 64 });
+    }
+
+    const file      = JSON.parse(fs.readFileSync(embedPath));
+    const embedData = file[embedName];
+    if (!embedData) {
+      return interaction.reply({ content: 'Embed name not found.', flags: 64 });
+    }
+
+    const text    = interaction.fields.getTextInputValue('footer_text').trim();
+    const iconUrl = interaction.fields.getTextInputValue('footer_image').trim();
+    const tsInput = interaction.fields.getTextInputValue('timestamp').trim().toLowerCase();
+
+    if (iconUrl && !isImageUrl(iconUrl)) {
+      return interaction.reply({
+        content: '❌ “Footer Icon URL” must be a valid image URL.',
+        flags: 64
+      });
+    }
+
+    embedData.footer    = { text: text || '', icon_url: iconUrl || null };
+    embedData.timestamp = tsInput === 'yes';
+    file[embedName] = embedData;
+    fs.writeFileSync(embedPath, JSON.stringify(file, null, 2));
+
+    // rebuild preview
+    const preview = new EmbedBuilder();
+    if (embedData.title)       preview.setTitle(formatPlaceholders(interaction.member, interaction.guild, embedData.title));
+    if (embedData.description) preview.setDescription(formatPlaceholders(interaction.member, interaction.guild, embedData.description));
+    if (embedData.color)       preview.setColor(embedData.color);
+    if (Array.isArray(embedData.fields) && embedData.fields.length) {
+      preview.setFields(embedData.fields.map(f => ({
+        name  : formatPlaceholders(interaction.member, interaction.guild, f.name),
+        value : formatPlaceholders(interaction.member, interaction.guild, f.value),
+        inline: !!f.inline
+      })));
+    }
+    if (embedData.author?.name) {
+      preview.setAuthor({
+        name   : formatPlaceholders(interaction.member, interaction.guild, embedData.author.name),
+        iconURL: embedData.author.icon_url
+      });
+    }
+    if (embedData.footer?.text) {
+      preview.setFooter({
+        text   : formatPlaceholders(interaction.member, interaction.guild, embedData.footer.text),
+        iconURL: embedData.footer.icon_url
+      });
+    }
+    if (embedData.timestamp)   preview.setTimestamp();
+    if (embedData.image?.url)  preview.setImage(embedData.image.url);
+    if (embedData.thumbnail?.url) preview.setThumbnail(embedData.thumbnail.url);
+
+    // update tracked message
+    const tracker  = fs.existsSync(trackPath)
+      ? JSON.parse(fs.readFileSync(trackPath))
+      : {};
+    const location = tracker[embedName];
+    if (location) {
+      try {
+        const channel = await interaction.client.channels.fetch(location.channelId);
+        const message = await channel.messages.fetch(location.messageId);
+        await message.edit({ embeds: [preview] });
+      } catch {}
+    }
+
+    return interaction.reply({ content: 'Embed footer updated.', flags: 64 });
+  }
+};

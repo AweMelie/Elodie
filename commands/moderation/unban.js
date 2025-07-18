@@ -1,4 +1,4 @@
-// commands/mod/unban.js
+// commands/moderation/unban.js
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,

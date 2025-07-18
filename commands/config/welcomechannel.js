@@ -1,4 +1,4 @@
-// commands/mod/welcomechannel.js
+// commands/config/welcomechannel.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {
   ensureGuildStorage,

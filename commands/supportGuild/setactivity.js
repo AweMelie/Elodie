@@ -1,5 +1,11 @@
-// commands/supportGuild/setactivity.js
-const { SlashCommandBuilder, ActivityType } = require('discord.js');
+const {
+  SlashCommandBuilder,
+  ActivityType
+} = require('discord.js');
+const fs = require('fs');
+const path = require('path');
+
+const ACTIVITY_PATH = path.join(__dirname, '..', '..', 'bot-storage', 'presence.json');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -26,7 +32,6 @@ module.exports = {
     ),
 
   async execute(interaction) {
-    // owner-only guard
     if (interaction.user.id !== process.env.OWNER_ID) {
       return interaction.reply({
         content: '❌ You don’t have permission to run this.',
@@ -34,12 +39,10 @@ module.exports = {
       });
     }
 
-    // This will be one of: "Playing", "Streaming", ...
     const typeKey = interaction.options.getString('type');
     const text    = interaction.options.getString('text');
+    const type    = ActivityType[typeKey];
 
-    // Dynamically map to the numeric enum
-    const type = ActivityType[typeKey];
     if (typeof type !== 'number') {
       return interaction.reply({
         content: '❌ Invalid activity type.',
@@ -47,14 +50,16 @@ module.exports = {
       });
     }
 
-    // Set the presence
     await interaction.client.user.setPresence({
       activities: [{ name: text, type }],
       status: 'online'
     });
 
+    const activityData = { type: typeKey, text };
+    fs.writeFileSync(ACTIVITY_PATH, JSON.stringify(activityData, null, 2));
+
     return interaction.reply({
-      content: `✅ Presence updated to **${typeKey.toLowerCase()} ${text}**`,
+      content: `✅ Presence updated to **${typeKey.toLowerCase()} ${text}** and saved.`,
       flags: 64
     });
   }

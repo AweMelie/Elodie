@@ -1,4 +1,4 @@
-// commands/mod/boostmessage.js
+// commands/config/boostmessage.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {
   ensureGuildStorage,

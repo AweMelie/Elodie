@@ -1,4 +1,4 @@
-// commands/mod/verify.js
+// commands/moderation/verify.js
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,

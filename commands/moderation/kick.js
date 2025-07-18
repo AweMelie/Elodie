@@ -1,4 +1,4 @@
-// commands/mod/kick.js
+// commands/moderation/kick.js
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,

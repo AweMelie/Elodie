@@ -1,4 +1,4 @@
-// commands/mod/logchannel.js
+// commands/config/logchannel.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {
   ensureGuildStorage,

@@ -1,4 +1,4 @@
-// commands/mod/ban.js
+// commands/moderation/ban.js
 const {
   SlashCommandBuilder,
   PermissionFlagsBits,

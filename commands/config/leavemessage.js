@@ -1,4 +1,4 @@
-// commands/mod/leavemessage.js
+// commands/config/leavemessage.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {
   ensureGuildStorage,

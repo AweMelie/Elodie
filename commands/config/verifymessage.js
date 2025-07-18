@@ -1,4 +1,4 @@
-// commands/mod/verifymessage.js
+// commands/config/verifymessage.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {
   ensureGuildStorage,

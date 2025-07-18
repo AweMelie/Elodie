@@ -1,4 +1,4 @@
-// commands/mod/verifiedrole.js
+// commands/config/verifiedrole.js
 const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
 const {
   ensureGuildStorage,
