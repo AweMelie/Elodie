@@ -5,26 +5,26 @@ const {
   loadConfig
 } = require('../utils/storageManager');
 const formatPlaceholders = require('../utils/formatPlaceholders');
-const convertColor       = require('../utils/convertColor'); // ⬅️ NEW
+const convertColor       = require('../utils/convertColor');
 
 module.exports = {
   name: 'guildMemberAdd',
   async execute(member) {
     const guildId = member.guild.id;
-
-    // 1️⃣ Ensure storage & load configs
     ensureGuildStorage(guildId);
-    const eventsConfig = loadConfig(guildId, 'server-events.json');
-    const mainConfig   = loadConfig(guildId, 'config.json');
-    const savedEmbeds  = loadConfig(guildId, 'embeds.json');
 
-    // 2️⃣ Send welcome message if set
+    // ─── Load configs ──────────────────────────────────────────
+    const eventsConfig = loadConfig(guildId, 'server-events.json') || {};
+    const mainConfig   = loadConfig(guildId, 'config.json')      || {};
+    const savedEmbeds  = loadConfig(guildId, 'embeds.json')      || {};
+
+    // ─── 1) Welcome message ──────────────────────────────────
     const welcomeChannelId = eventsConfig.welcomeChannel;
     const welcomeMessage   = eventsConfig.welcomeMessage;
     if (welcomeChannelId && welcomeMessage) {
       const channel = member.guild.channels.cache.get(welcomeChannelId);
       if (channel) {
-        // Parse out any embed placeholder
+        // Extract embed reference
         const embedMatch = welcomeMessage.match(/\{embed:([\w-]+)\}/);
         const embedName  = embedMatch?.[1];
         const rawText    = welcomeMessage.replace(/\{embed:[\w-]+\}/, '').trim();
@@ -32,16 +32,66 @@ module.exports = {
 
         let welcomeEmbed = null;
         if (embedName && savedEmbeds[embedName]) {
-          const rawEmbed = savedEmbeds[embedName];
-          const embed    = EmbedBuilder.from(rawEmbed);
+          const raw     = savedEmbeds[embedName];
+          const base    = {
+            title:       null,
+            description: null,
+            color:       '#00FFFF',
+            author:      { name: null,   icon_url: null },
+            footer:      { text: null,   icon_url: null },
+            thumbnail:   { url:  null },
+            image:       { url:  null },
+            fields:      [],
+            timestamp:   false
+          };
+          // Merge raw into defaults
+          const cfg = {
+            ...base,
+            ...raw,
+            author:    { ...base.author,    ...raw.author    },
+            footer:    { ...base.footer,    ...raw.footer    },
+            thumbnail: { ...base.thumbnail, ...raw.thumbnail },
+            image:     { ...base.image,     ...raw.image     },
+            fields:    Array.isArray(raw.fields) ? raw.fields : base.fields
+          };
 
-          // convert hex color to int if needed
-          const safeColor = convertColor(rawEmbed.color);
-          if (safeColor !== null) {
-            embed.setColor(safeColor);
+          // Build embed with placeholders
+          const eb = new EmbedBuilder();
+          const safeColor = convertColor(cfg.color || base.color);
+          if (safeColor !== null) eb.setColor(safeColor);
+
+          if (cfg.title) {
+            eb.setTitle(formatPlaceholders(member, member.guild, cfg.title));
           }
+          if (cfg.description) {
+            eb.setDescription(formatPlaceholders(member, member.guild, cfg.description));
+          }
+          if (cfg.fields.length) {
+            eb.setFields(
+              cfg.fields.map(f => ({
+                name:  formatPlaceholders(member, member.guild, f.name),
+                value: formatPlaceholders(member, member.guild, f.value),
+                inline: !!f.inline
+              }))
+            );
+          }
+          if (cfg.author.name) {
+            eb.setAuthor({
+              name:    formatPlaceholders(member, member.guild, cfg.author.name),
+              iconURL: cfg.author.icon_url
+            });
+          }
+          if (cfg.footer.text) {
+            eb.setFooter({
+              text:    formatPlaceholders(member, member.guild, cfg.footer.text),
+              iconURL: cfg.footer.icon_url
+            });
+          }
+          if (cfg.thumbnail.url) eb.setThumbnail(cfg.thumbnail.url);
+          if (cfg.image.url)     eb.setImage(cfg.image.url);
+          if (cfg.timestamp)     eb.setTimestamp();
 
-          welcomeEmbed = embed;
+          welcomeEmbed = eb;
         }
 
         await channel.send({
@@ -51,19 +101,19 @@ module.exports = {
       }
     }
 
-    // 3️⃣ Log join to moderation channel if configured
+    // ─── 2) Moderation log ─────────────────────────────────
     const logChannelId = mainConfig.logChannel;
     if (logChannelId) {
       const logChannel = member.guild.channels.cache.get(logChannelId);
       if (logChannel) {
         const joinEmbed = new EmbedBuilder()
           .setTitle('Member Joined')
-          .setColor(0x00ff00)
+          .setColor(0x00FF00)
           .setTimestamp()
           .addFields(
             {
               name:   'Username',
-              value:  `${member.user.tag}`,
+              value:  member.user.tag,
               inline: true
             },
             {
@@ -73,7 +123,7 @@ module.exports = {
             },
             {
               name:   'Display Name',
-              value:  `${member.displayName}`,
+              value:  member.displayName,
               inline: true
             },
             {

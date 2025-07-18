@@ -9,6 +9,7 @@ const {
   loadConfig
 } = require('../../utils/storageManager');
 const formatPlaceholders = require('../../utils/formatPlaceholders');
+const convertColor       = require('../../utils/convertColor');
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -24,8 +25,8 @@ module.exports = {
 
   async execute(interaction) {
     const targetUser = interaction.options.getUser('target');
-    const guild = interaction.guild;
-    const member = guild.members.cache.get(targetUser.id);
+    const guild      = interaction.guild;
+    const member     = guild.members.cache.get(targetUser.id);
 
     // 1️⃣ Ensure the target is in the guild
     if (!member) {
@@ -37,9 +38,9 @@ module.exports = {
 
     // 2️⃣ Ensure storage and load configs
     ensureGuildStorage(guild.id);
-    const config    = loadConfig(guild.id, 'config.json');
-    const events    = loadConfig(guild.id, 'server-events.json');
-    const savedEmbeds = loadConfig(guild.id, 'embeds.json');
+    const config     = loadConfig(guild.id, 'config.json')           || {};
+    const events     = loadConfig(guild.id, 'server-events.json')   || {};
+    const savedEmbeds= loadConfig(guild.id, 'embeds.json')          || {};
 
     // 3️⃣ Validate verifiedRole
     const verifiedRoleId = config.verifiedRole;
@@ -72,7 +73,7 @@ module.exports = {
     // 5️⃣ Build the log embed
     const logEmbed = new EmbedBuilder()
       .setTitle('User Verified')
-      .setColor(0x2ecc71)
+      .setColor(0x2ECC71)
       .setTimestamp()
       .setDescription([
         `**User:** <@${targetUser.id}>`,
@@ -80,7 +81,7 @@ module.exports = {
         `**Moderator:** <@${interaction.user.id}>`
       ].join('\n'));
 
-    // 6️⃣ Send log embed or fallback
+    // 6️⃣ Send log embed or fallback reply
     const logChannelId = config.logChannel;
     const logChannel   = logChannelId && guild.channels.cache.get(logChannelId);
 
@@ -106,21 +107,80 @@ module.exports = {
     if (verifyChannel && verifyMessage) {
       const sendChannel = guild.channels.cache.get(verifyChannel);
       if (sendChannel) {
-        // Extract embed placeholder
+        // Extract embed reference
         const embedMatch = verifyMessage.match(/\{embed:([\w-]+)\}/);
         const embedName  = embedMatch?.[1];
         const rawText    = verifyMessage.replace(/\{embed:[\w-]+\}/, '').trim();
-        const formatted  = formatPlaceholders(member, guild, rawText);
+        const formattedText = formatPlaceholders(member, guild, rawText);
 
-        // Load saved embed if referenced
+        // Load and rebuild embed with placeholders
         let attachedEmbed = null;
         if (embedName && savedEmbeds[embedName]) {
-          attachedEmbed = EmbedBuilder.from(savedEmbeds[embedName]);
+          const raw     = savedEmbeds[embedName];
+          const base    = {
+            title:       null,
+            description: null,
+            color:       '#5865F2',
+            author:      { name: null,   icon_url: null },
+            footer:      { text: null,   icon_url: null },
+            thumbnail:   { url:  null },
+            image:       { url:  null },
+            fields:      [],
+            timestamp:   false
+          };
+
+          // Merge raw into defaults
+          const cfg = {
+            ...base,
+            ...raw,
+            author:      { ...base.author,    ...raw.author    },
+            footer:      { ...base.footer,    ...raw.footer    },
+            thumbnail:   { ...base.thumbnail, ...raw.thumbnail },
+            image:       { ...base.image,     ...raw.image     },
+            fields:      Array.isArray(raw.fields) ? raw.fields : base.fields
+          };
+
+          const eb = new EmbedBuilder();
+          const safeColor = convertColor(cfg.color || base.color);
+          if (safeColor !== null) eb.setColor(safeColor);
+
+          if (cfg.title) {
+            eb.setTitle(formatPlaceholders(member, guild, cfg.title));
+          }
+          if (cfg.description) {
+            eb.setDescription(formatPlaceholders(member, guild, cfg.description));
+          }
+          if (cfg.fields.length) {
+            eb.setFields(
+              cfg.fields.map(f => ({
+                name:  formatPlaceholders(member, guild, f.name),
+                value: formatPlaceholders(member, guild, f.value),
+                inline: !!f.inline
+              }))
+            );
+          }
+          if (cfg.author.name) {
+            eb.setAuthor({
+              name:    formatPlaceholders(member, guild, cfg.author.name),
+              iconURL: cfg.author.icon_url
+            });
+          }
+          if (cfg.footer.text) {
+            eb.setFooter({
+              text:    formatPlaceholders(member, guild, cfg.footer.text),
+              iconURL: cfg.footer.icon_url
+            });
+          }
+          if (cfg.thumbnail.url) eb.setThumbnail(cfg.thumbnail.url);
+          if (cfg.image.url)     eb.setImage(cfg.image.url);
+          if (cfg.timestamp)     eb.setTimestamp();
+
+          attachedEmbed = eb;
         }
 
         await sendChannel.send({
-          content: formatted,
-          embeds: attachedEmbed ? [attachedEmbed] : []
+          content: formattedText,
+          embeds:  attachedEmbed ? [attachedEmbed] : []
         });
       }
     }
