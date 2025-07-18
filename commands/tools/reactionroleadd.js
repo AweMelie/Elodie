@@ -27,7 +27,7 @@ module.exports = {
   async execute(interaction) {
     // Permission check
     if (!interaction.member.permissions.has('ManageRoles')) {
-      return interaction.reply({ content: '❌ You need Manage Roles permission to use this command.', ephemeral: true });
+      return interaction.reply({ content: '❌ You need Manage Roles permission to use this command.', flags: 64 });
     }
 
     const input    = interaction.options.getString('message');
@@ -51,18 +51,18 @@ module.exports = {
     try {
       targetChannel = await interaction.client.channels.fetch(channelId);
     } catch {
-      return interaction.reply({ content: '❌ Unable to find that channel.', ephemeral: true });
+      return interaction.reply({ content: '❌ Unable to find that channel.', flags: 64 });
     }
 
     if (!targetChannel.isTextBased()) {
-      return interaction.reply({ content: '❌ Target channel is not text-based.', ephemeral: true });
+      return interaction.reply({ content: '❌ Target channel is not text-based.', flags: 64 });
     }
 
     let targetMessage;
     try {
       targetMessage = await targetChannel.messages.fetch(messageId);
     } catch {
-      return interaction.reply({ content: '❌ Could not fetch that message.', ephemeral: true });
+      return interaction.reply({ content: '❌ Could not fetch that message.', flags: 64 });
     }
 
     // React to the message
@@ -71,7 +71,7 @@ module.exports = {
       emojiObject = targetMessage.guild.emojis.cache.find(e => e.toString() === emoji) || emoji;
       await targetMessage.react(emojiObject);
     } catch {
-      return interaction.reply({ content: '❌ Failed to react — invalid emoji or missing permission.', ephemeral: true });
+      return interaction.reply({ content: '❌ Failed to react — invalid emoji or missing permission.', flags: 64 });
     }
 
     // Load + update guild reaction-role config
@@ -84,7 +84,7 @@ module.exports = {
 
     return interaction.reply({
       content: `✅ Added: reacting with ${emojiObject} on [this message] will grant **${role.name}**.`,
-      ephemeral: true
+      flags: 64
     });
   }
 };

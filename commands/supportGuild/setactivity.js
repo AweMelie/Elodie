@@ -30,7 +30,7 @@ module.exports = {
     if (interaction.user.id !== process.env.OWNER_ID) {
       return interaction.reply({
         content: '❌ You don’t have permission to run this.',
-        ephemeral: true
+        flags: 64
       });
     }
 
@@ -43,7 +43,7 @@ module.exports = {
     if (typeof type !== 'number') {
       return interaction.reply({
         content: '❌ Invalid activity type.',
-        ephemeral: true
+        flags: 64
       });
     }
 
@@ -55,7 +55,7 @@ module.exports = {
 
     return interaction.reply({
       content: `✅ Presence updated to **${typeKey.toLowerCase()} ${text}**`,
-      ephemeral: true
+      flags: 64
     });
   }
 };
