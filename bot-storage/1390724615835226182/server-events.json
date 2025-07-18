@@ -1,6 +1,1 @@
-{
-  "welcomeChannel": "1390724617483714647",
-  "welcomeMessage": "hi {user} {embed:welcome}",
-  "verifyChannel": "1390724618234499125",
-  "verifyMessage": "welcome, {user}! {embed:verify}"
-}
+{}
