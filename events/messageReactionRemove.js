@@ -1,7 +1,7 @@
 const { loadReactionRoles } = require('../../utils/storageManager');
 
 module.exports = {
-  name: 'messageReactionAdd',
+  name: 'messageReactionRemove',
   async execute(reaction, user) {
     if (user.bot) return;
     if (reaction.partial) await reaction.fetch();
@@ -18,6 +18,6 @@ module.exports = {
     if (!match) return;
 
     const member = await guild.members.fetch(user.id);
-    await member.roles.add(match.roleId).catch(() => null);
+    await member.roles.remove(match.roleId).catch(() => null);
   }
 };

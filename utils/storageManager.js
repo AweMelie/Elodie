@@ -1,5 +1,5 @@
 // utils/storageManager.js
-const fs   = require('fs');
+const fs = require('fs');
 const path = require('path');
 
 const BASE_DIR = path.join(__dirname, '..', 'bot-storage');
@@ -26,7 +26,7 @@ function ensureGuildStorage(guildId) {
     console.log(`🗂 Created storage folder for guild: ${guildId}`);
   }
 
-  const files = ['config.json', 'server-events.json', 'embeds.json'];
+  const files = ['config.json', 'server-events.json', 'embeds.json', 'reactionRoles.json'];
   for (const file of files) {
     const fp = path.join(guildDir, file);
     if (!fs.existsSync(fp)) {
@@ -53,7 +53,7 @@ function loadConfig(guildId, fileName) {
  */
 function saveConfig(guildId, fileName, data) {
   const filePath = path.join(BASE_DIR, guildId, fileName);
-  const tmpPath  = filePath + '.tmp';
+  const tmpPath = filePath + '.tmp';
   fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
   fs.renameSync(tmpPath, filePath);
 }
@@ -64,7 +64,6 @@ function saveConfig(guildId, fileName, data) {
 function removeGuildStorage(guildId) {
   const guildDir = path.join(BASE_DIR, guildId);
   if (fs.existsSync(guildDir)) {
-    // Requires Node.js v14.14+; for older Node, swap with fs.rmdirSync
     fs.rmSync(guildDir, { recursive: true, force: true });
     console.log(`🗑️ Removed storage for guild: ${guildId}`);
   } else {
@@ -72,9 +71,34 @@ function removeGuildStorage(guildId) {
   }
 }
 
+/**
+ * Load reaction-role mappings for a guild.
+ */
+function loadReactionRoles(guildId) {
+  ensureGuildStorage(guildId);
+  const filePath = path.join(BASE_DIR, guildId, 'reactionRoles.json');
+  try {
+    return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
+  } catch {
+    return {};
+  }
+}
+
+/**
+ * Save reaction-role mappings for a guild.
+ */
+function saveReactionRoles(guildId, data) {
+  const filePath = path.join(BASE_DIR, guildId, 'reactionRoles.json');
+  const tmpPath = filePath + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  fs.renameSync(tmpPath, filePath);
+}
+
 module.exports = {
   ensureGuildStorage,
   loadConfig,
   saveConfig,
-  removeGuildStorage
+  removeGuildStorage,
+  loadReactionRoles,
+  saveReactionRoles
 };

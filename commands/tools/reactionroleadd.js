@@ -1,90 +1,89 @@
 const { SlashCommandBuilder } = require('discord.js');
-const fs = require('fs');
-const path = require('path');
-
-const CONFIG_PATH = path.join(__dirname, '..', 'storage', 'reactionRoles.json');
-
-// Ensure storage file exists
-if (!fs.existsSync(CONFIG_PATH)) fs.writeFileSync(CONFIG_PATH, '{}');
+const { loadReactionRoles, saveReactionRoles } = require('../../utils/storageManager');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('reactionroleadd')
-    .setDescription('📌 Assign a role to users who react on a message')
+    .setDescription('📌 Assign a role to users who react on a specific message')
     .addStringOption(opt =>
       opt
         .setName('message')
         .setDescription('Message link or message ID')
         .setRequired(true)
     )
-    .addRoleOption(opt =>
-      opt
-        .setName('role')
-        .setDescription('Role to assign on reaction')
-        .setRequired(true)
-    )
     .addStringOption(opt =>
       opt
         .setName('emoji')
-        .setDescription('Emoji (unicode or custom) to use')
+        .setDescription('Emoji (Unicode or custom) to react with')
+        .setRequired(true)
+    )
+    .addRoleOption(opt =>
+      opt
+        .setName('role')
+        .setDescription('Role to assign when reacted')
         .setRequired(true)
     ),
 
   async execute(interaction) {
-    // owner/admin guard
+    // Permission check
     if (!interaction.member.permissions.has('ManageRoles')) {
-      return interaction.reply({ content: '❌ You need Manage Roles permission.', ephemeral: true });
+      return interaction.reply({ content: '❌ You need Manage Roles permission to use this command.', ephemeral: true });
     }
 
-    const input   = interaction.options.getString('message');
-    const role    = interaction.options.getRole('role');
-    const emoji   = interaction.options.getString('emoji');
-    let guildId, channelId, messageId;
+    const input    = interaction.options.getString('message');
+    const emoji    = interaction.options.getString('emoji');
+    const role     = interaction.options.getRole('role');
+    const guildId  = interaction.guild.id;
 
-    // Parse a full link: https://discord.com/channels/<guildId>/<channelId>/<messageId>
-    const linkMatch = input.match(/\/channels\/(\d+)\/(\d+)\/(\d+)/);
-    if (linkMatch) {
-      [, guildId, channelId, messageId] = linkMatch;
+    let channelId, messageId;
+
+    // Parse full message link or assume message ID
+    const match = input.match(/\/channels\/\d+\/(\d+)\/(\d+)/);
+    if (match) {
+      [, channelId, messageId] = match;
     } else {
-      // assume current channel + raw messageId
-      guildId   = interaction.guildId;
       channelId = interaction.channelId;
       messageId = input;
     }
 
-    // Fetch the message
-    const channel = await interaction.client.channels.fetch(channelId);
-    if (!channel || !channel.isTextBased()) {
+    // Fetch the target channel and message
+    let targetChannel;
+    try {
+      targetChannel = await interaction.client.channels.fetch(channelId);
+    } catch {
       return interaction.reply({ content: '❌ Unable to find that channel.', ephemeral: true });
     }
 
-    let message;
+    if (!targetChannel.isTextBased()) {
+      return interaction.reply({ content: '❌ Target channel is not text-based.', ephemeral: true });
+    }
+
+    let targetMessage;
     try {
-      message = await channel.messages.fetch(messageId);
+      targetMessage = await targetChannel.messages.fetch(messageId);
     } catch {
-      return interaction.reply({ content: '❌ Message not found.', ephemeral: true });
+      return interaction.reply({ content: '❌ Could not fetch that message.', ephemeral: true });
     }
 
     // React to the message
-    let reactEmoji = emoji;
+    let emojiObject;
     try {
-      reactEmoji = message.guild.emojis.cache.get(emoji) || emoji;
-      await message.react(reactEmoji);
+      emojiObject = targetMessage.guild.emojis.cache.find(e => e.toString() === emoji) || emoji;
+      await targetMessage.react(emojiObject);
     } catch {
-      return interaction.reply({ content: '❌ Invalid emoji or missing permissions to react.', ephemeral: true });
+      return interaction.reply({ content: '❌ Failed to react — invalid emoji or missing permission.', ephemeral: true });
     }
 
-    // Load & update storage
-    const config = JSON.parse(fs.readFileSync(CONFIG_PATH, 'utf-8'));
-    config[messageId] = config[messageId] || [];
-    config[messageId].push({
-      emoji: reactEmoji.toString(),
-      roleId: role.id
-    });
-    fs.writeFileSync(CONFIG_PATH, JSON.stringify(config, null, 2));
+    // Load + update guild reaction-role config
+    const config = loadReactionRoles(guildId);
+
+    if (!config[messageId]) config[messageId] = [];
+    config[messageId].push({ emoji: emojiObject.toString(), roleId: role.id });
+
+    saveReactionRoles(guildId, config);
 
     return interaction.reply({
-      content: `✅ Added reaction-role: reacting with ${reactEmoji} on [that message] will grant the **${role.name}** role.`,
+      content: `✅ Added: reacting with ${emojiObject} on [this message] will grant **${role.name}**.`,
       ephemeral: true
     });
   }
