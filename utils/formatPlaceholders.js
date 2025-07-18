@@ -12,30 +12,39 @@ function ordinal(n) {
 /**
  * Replace placeholders in a template string with user/guild context.
  * Accepts either a GuildMember (with .user) or a raw User object.
+ * If given a raw User but a guild is passed, attempts to pull the member
+ * from guild.members.cache to get a real displayName.
  */
 module.exports = function formatPlaceholders(memberOrUser, guild = {}, template = '') {
   if (!template || typeof template !== 'string') return '';
 
-  // Normalize to a consistent shape
+  // figure out user + displayName
   let user, displayName, joinedAt, createdAt;
+
   if (memberOrUser.user) {
-    // GuildMember
+    // it’s already a GuildMember
     user        = memberOrUser.user;
     displayName = memberOrUser.displayName;
     joinedAt    = memberOrUser.joinedAt;
     createdAt   = user.createdAt;
   } else {
-    // Raw User
-    user        = memberOrUser;
-    displayName = user.username;
-    joinedAt    = null;
-    createdAt   = user.createdAt;
+    // raw User – try to fetch a GuildMember for displayName if possible
+    user      = memberOrUser;
+    createdAt = user.createdAt;
+
+    if (guild.members?.cache?.has(user.id)) {
+      const gm = guild.members.cache.get(user.id);
+      displayName = gm.displayName;
+      joinedAt    = gm.joinedAt;
+    } else {
+      displayName = user.username;
+      joinedAt    = null;
+    }
   }
 
-  // Precompute guild metrics safely
-  const memberCount        = guild.memberCount ?? 0;
-  const humanCount         = (guild.members?.cache.filter(m => !m.user.bot).size) ?? '';
-  const humanCountNumeric  = typeof humanCount === 'number' ? humanCount : Number(guild.members?.cache.filter(m => !m.user.bot).size) || 0;
+  // safe guild metrics
+  const memberCount       = guild.memberCount ?? 0;
+  const humanCountNumeric = guild.members?.cache.filter(m => !m.user.bot).size ?? 0;
 
   const replacements = {
     '{user}'                  : memberOrUser.toString(),
@@ -49,7 +58,7 @@ module.exports = function formatPlaceholders(memberOrUser, guild = {}, template 
     '{server_id}'             : guild.id ?? '',
     '{server_members}'        : memberCount.toString(),
     '{server_members_ordinal}': ordinal(memberCount),
-    '{server_humans}'         : humanCount.toString(),
+    '{server_humans}'         : humanCountNumeric.toString(),
     '{server_humans_ordinal}' : ordinal(humanCountNumeric),
     '{server_icon}'           : typeof guild.iconURL === 'function' ? guild.iconURL() : '',
     '{server_create}'         : guild.createdAt?.toLocaleDateString() ?? '',
