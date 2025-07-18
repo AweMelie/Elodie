@@ -117,7 +117,7 @@ module.exports = {
         content: [
           `Editing embed: \`${embedName}\``,
           `Use it in messages with \`{embed:${embedName}}\``,
-          `Example: \`Thanks {user}! {embed:${embedName}}\``
+          `Example: to \`Thanks {user}! {embed:${embedName}}\``
         ].join('\n'),
         embeds: [previewEmbed],
         components: [row]
