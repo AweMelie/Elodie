@@ -8,17 +8,17 @@ const formatPlaceholders = require('../utils/formatPlaceholders');
 const convertColor       = require('../utils/convertColor');
 
 function formatDuration(ms) {
-  const sec  = Math.floor(ms / 1000);
-  const min  = Math.floor(sec / 60);
-  if (min < 60) return `${min} minute${min === 1 ? '' : 's'} ago`;
-  const hr   = Math.floor(min / 60);
-  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`;
-  const days = Math.floor(hr / 24);
-  if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
+  const sec   = Math.floor(ms / 1000);
+  const min   = Math.floor(sec / 60);
+  if (min < 60) return `${min} minute${min === 1 ? '' : 's'}`;
+  const hr    = Math.floor(min / 60);
+  if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'}`;
+  const days  = Math.floor(hr / 24);
+  if (days < 7) return `${days} day${days === 1 ? '' : 's'}`;
   const weeks = Math.floor(days / 7);
-  if (weeks < 5) return `${weeks} week${weeks === 1 ? '' : 's'} ago`;
+  if (weeks < 5) return `${weeks} week${weeks === 1 ? '' : 's'}`;
   const months = Math.floor(days / 30);
-  return `${months} month${months === 1 ? '' : 's'} ago`;
+  return `${months} month${months === 1 ? '' : 's'}`;
 }
 
 module.exports = {
@@ -38,7 +38,6 @@ module.exports = {
     if (leaveChannelId && leaveMessageTpl) {
       const leaveChannel = member.guild.channels.cache.get(leaveChannelId);
       if (leaveChannel) {
-        // Extract embed reference
         const embedMatch = leaveMessageTpl.match(/\{embed:([\w-]+)\}/);
         const embedName  = embedMatch?.[1];
         const rawText    = leaveMessageTpl.replace(/\{embed:[\w-]+\}/, '').trim();
@@ -125,9 +124,10 @@ module.exports = {
         const duration  = Date.now() - joinedAt;
         const stayedFor = formatDuration(duration);
 
+        // mention each role by ID
         const roles = member.roles.cache
           .filter(r => r.id !== member.guild.id)
-          .map(r => r.name)
+          .map(r => `<@&${r.id}>`)
           .join(', ') || 'None';
 
         const leaveLog = new EmbedBuilder()
@@ -135,11 +135,31 @@ module.exports = {
           .setColor(0xFF9900)
           .setTimestamp()
           .addFields(
-            { name: 'User',           value: member.user.tag, inline: true },
-            { name: 'User ID',        value: `\`${member.id}\``, inline: true },
-            { name: 'Display Name',   value: member.displayName, inline: true },
-            { name: 'Time on Server', value: stayedFor,           inline: true },
-            { name: 'Roles Held',     value: roles,               inline: false }
+            {
+              name:   'User',
+              value:  member.user.username,  // no discriminator
+              inline: true
+            },
+            {
+              name:   'User ID',
+              value:  `\`${member.id}\``,
+              inline: true
+            },
+            {
+              name:   'Display Name',
+              value:  member.displayName,
+              inline: true
+            },
+            {
+              name:   'Time on Server',
+              value:  `\`${stayedFor}\``,             // e.g. "15 minutes"
+              inline: true
+            },
+            {
+              name:   'Roles',
+              value:  roles,
+              inline: false
+            }
           );
 
         await logChannel.send({ embeds: [leaveLog] });
