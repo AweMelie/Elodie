@@ -5,28 +5,28 @@ module.exports = {
   data: new SlashCommandBuilder()
     .setName('setactivity')
     .setDescription('Change the bot’s presence/activity (owner only)')
-    .addStringOption(option =>
-      option
+    .addStringOption(opt =>
+      opt
         .setName('type')
         .setDescription('Select activity type')
         .setRequired(true)
         .addChoices(
-          { name: 'Playing',   value: 'PLAYING' },
-          { name: 'Streaming', value: 'STREAMING' },
-          { name: 'Listening', value: 'LISTENING' },
-          { name: 'Watching',  value: 'WATCHING' },
-          { name: 'Competing', value: 'COMPETING' }
+          { name: 'Playing',   value: 'Playing' },
+          { name: 'Streaming', value: 'Streaming' },
+          { name: 'Listening', value: 'Listening' },
+          { name: 'Watching',  value: 'Watching' },
+          { name: 'Competing', value: 'Competing' }
         )
     )
-    .addStringOption(option =>
-      option
+    .addStringOption(opt =>
+      opt
         .setName('text')
         .setDescription('What the bot should display')
         .setRequired(true)
     ),
 
   async execute(interaction) {
-    // Owner-only guard
+    // owner-only guard
     if (interaction.user.id !== process.env.OWNER_ID) {
       return interaction.reply({
         content: '❌ You don’t have permission to run this.',
@@ -34,18 +34,25 @@ module.exports = {
       });
     }
 
-    // Grab the raw choice, then map to the ActivityType enum
-    const typeKey = interaction.options.getString('type');      // e.g. "PLAYING"
-    const type    = ActivityType[typeKey];                      // resolves to the numeric enum
+    // This will be one of: "Playing", "Streaming", ...
+    const typeKey = interaction.options.getString('type');
     const text    = interaction.options.getString('text');
 
-    // Update the bot’s presence
+    // Dynamically map to the numeric enum
+    const type = ActivityType[typeKey];
+    if (typeof type !== 'number') {
+      return interaction.reply({
+        content: '❌ Invalid activity type.',
+        ephemeral: true
+      });
+    }
+
+    // Set the presence
     await interaction.client.user.setPresence({
       activities: [{ name: text, type }],
       status: 'online'
     });
 
-    // Confirm to the owner
     return interaction.reply({
       content: `✅ Presence updated to **${typeKey.toLowerCase()} ${text}**`,
       ephemeral: true
