@@ -1,7 +1,7 @@
 // events/guildCreate.js
-const { ensureGuildStorage, loadConfig } = require('../utils/storageManager');
-const { EmbedBuilder }                    = require('discord.js');
-const formatPlaceholders                  = require('../utils/formatPlaceholders');
+const { loadGlobalWelcome } = require('../utils/storageManager');
+const { EmbedBuilder }      = require('discord.js');
+const formatPlaceholders    = require('../utils/formatPlaceholders');
 
 module.exports = {
   name: 'guildCreate',
@@ -9,33 +9,19 @@ module.exports = {
   async execute(guild) {
     console.log(`➡️ guildCreate fired for ${guild.id}`);
 
-    // Make sure the guild’s data folder exists
-    ensureGuildStorage(guild.id);
-
-    // Load the embed you built with /setwelcdm
-    const cfg = loadConfig(guild.id, 'welcome-embed.json');
-    if (!cfg) return; // nothing configured yet
+    // 1️⃣ Load your global welcome-DM config
+    const cfg = loadGlobalWelcome();
+    if (!cfg) return; // you haven't run /setwelcdm yet
 
     try {
-      // Fetch the member who invited the bot (guild owner)
+      // 2️⃣ Fetch the user who added the bot (the guild owner)
       const owner = await guild.fetchOwner();
 
-      // Build the embed from your saved config
+      // 3️⃣ Build the embed from that global config
       const embed = new EmbedBuilder();
-
-      if (cfg.title) {
-        embed.setTitle(
-          formatPlaceholders(owner, guild, cfg.title)
-        );
-      }
-
-      if (cfg.description) {
-        embed.setDescription(
-          formatPlaceholders(owner, guild, cfg.description)
-        );
-      }
-
-      embed.setColor(cfg.color || '#00FFFF');
+      if (cfg.title)       embed.setTitle(formatPlaceholders(owner, guild, cfg.title));
+      if (cfg.description) embed.setDescription(formatPlaceholders(owner, guild, cfg.description));
+      embed.setColor(cfg.color || '#5865F2');
 
       if (Array.isArray(cfg.fields) && cfg.fields.length) {
         embed.setFields(
@@ -61,22 +47,15 @@ module.exports = {
         });
       }
 
-      if (cfg.image?.url) {
-        embed.setImage(cfg.image.url);
-      }
+      if (cfg.image?.url)     embed.setImage(cfg.image.url);
+      if (cfg.thumbnail?.url) embed.setThumbnail(cfg.thumbnail.url);
+      if (cfg.timestamp)      embed.setTimestamp();
 
-      if (cfg.thumbnail?.url) {
-        embed.setThumbnail(cfg.thumbnail.url);
-      }
-
-      if (cfg.timestamp) {
-        embed.setTimestamp();
-      }
-
-      // Finally, DM the inviter their personalized welcome embed
+      // 4️⃣ DM the owner
       await owner.send({ embeds: [embed] });
-    } catch (error) {
-      console.error('❌ Error sending welcome DM:', error);
+      console.log(`✅ Sent welcome DM to ${owner.id} for guild ${guild.id}`);
+    } catch (err) {
+      console.error(`❌ Failed to send welcome DM for guild ${guild.id}:`, err);
     }
   }
 };

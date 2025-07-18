@@ -1,8 +1,9 @@
 // utils/storageManager.js
-const fs = require('fs');
+const fs   = require('fs');
 const path = require('path');
 
-const BASE_DIR = path.join(__dirname, '..', 'bot-storage');
+const BASE_DIR             = path.join(__dirname, '..', 'bot-storage');
+const GLOBAL_WELCOME_PATH  = path.join(BASE_DIR, 'globalWelcome.json');
 
 /**
  * Make sure the base storage folder exists.
@@ -40,6 +41,7 @@ function ensureGuildStorage(guildId) {
  * Load & parse a guild-specific JSON file.
  */
 function loadConfig(guildId, fileName) {
+  ensureGuildStorage(guildId);
   const filePath = path.join(BASE_DIR, guildId, fileName);
   try {
     return JSON.parse(fs.readFileSync(filePath, 'utf-8'));
@@ -52,8 +54,9 @@ function loadConfig(guildId, fileName) {
  * Atomically write a guild-specific JSON file.
  */
 function saveConfig(guildId, fileName, data) {
+  ensureGuildStorage(guildId);
   const filePath = path.join(BASE_DIR, guildId, fileName);
-  const tmpPath = filePath + '.tmp';
+  const tmpPath  = filePath + '.tmp';
   fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
   fs.renameSync(tmpPath, filePath);
 }
@@ -88,10 +91,34 @@ function loadReactionRoles(guildId) {
  * Save reaction-role mappings for a guild.
  */
 function saveReactionRoles(guildId, data) {
+  ensureGuildStorage(guildId);
   const filePath = path.join(BASE_DIR, guildId, 'reactionRoles.json');
-  const tmpPath = filePath + '.tmp';
+  const tmpPath  = filePath + '.tmp';
   fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
   fs.renameSync(tmpPath, filePath);
+}
+
+/**
+ * Load the global welcome DM config.
+ */
+function loadGlobalWelcome() {
+  ensureBaseDir();
+  if (!fs.existsSync(GLOBAL_WELCOME_PATH)) return null;
+  try {
+    return JSON.parse(fs.readFileSync(GLOBAL_WELCOME_PATH, 'utf-8'));
+  } catch {
+    return null;
+  }
+}
+
+/**
+ * Save the global welcome DM config.
+ */
+function saveGlobalWelcome(data) {
+  ensureBaseDir();
+  const tmpPath = GLOBAL_WELCOME_PATH + '.tmp';
+  fs.writeFileSync(tmpPath, JSON.stringify(data, null, 2), 'utf-8');
+  fs.renameSync(tmpPath, GLOBAL_WELCOME_PATH);
 }
 
 module.exports = {
@@ -100,5 +127,7 @@ module.exports = {
   saveConfig,
   removeGuildStorage,
   loadReactionRoles,
-  saveReactionRoles
+  saveReactionRoles,
+  loadGlobalWelcome,
+  saveGlobalWelcome
 };
