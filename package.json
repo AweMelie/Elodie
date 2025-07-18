@@ -1,14 +1,17 @@
 {
   "name": "elodie",
   "version": "1.0.0",
+  "description": "",
   "main": "index.js",
   "scripts": {
+    "deploy:commands": "node deploy-commands.js",
+    "prestart": "npm run deploy:commands",
+    "start": "node index.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "description": "",
   "dependencies": {
     "@discordjs/rest": "^2.5.1",
     "discord-api-types": "^0.38.15",
