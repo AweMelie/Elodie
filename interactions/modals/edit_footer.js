@@ -2,14 +2,15 @@
 const fs = require('fs');
 const path = require('path');
 const { EmbedBuilder } = require('discord.js');
-const isImageUrl       = require('../../utils/isImageUrl');
+const isImageUrl         = require('../../utils/isImageUrl');
 const formatPlaceholders = require('../../utils/formatPlaceholders');
+const convertColor       = require('../../utils/convertColor');
 
 module.exports = {
   customId: 'edit_footer',
 
   async execute(interaction) {
-    const [ , embedName ] = interaction.customId.split(':');
+    const [, embedName] = interaction.customId.split(':');
     const guildId   = interaction.guild.id;
     const embedPath = path.join(__dirname, '..', '..', 'bot-storage', guildId, 'embeds.json');
     const trackPath = path.join(__dirname, '..', '..', 'bot-storage', guildId, 'embed-messages.json');
@@ -37,14 +38,21 @@ module.exports = {
 
     embedData.footer    = { text: text || '', icon_url: iconUrl || null };
     embedData.timestamp = tsInput === 'yes';
-    file[embedName] = embedData;
+    file[embedName]     = embedData;
     fs.writeFileSync(embedPath, JSON.stringify(file, null, 2));
 
     // rebuild preview
     const preview = new EmbedBuilder();
-    if (embedData.title)       preview.setTitle(formatPlaceholders(interaction.member, interaction.guild, embedData.title));
-    if (embedData.description) preview.setDescription(formatPlaceholders(interaction.member, interaction.guild, embedData.description));
-    if (embedData.color)       preview.setColor(embedData.color);
+    if (embedData.title) {
+      preview.setTitle(formatPlaceholders(interaction.member, interaction.guild, embedData.title));
+    }
+    if (embedData.description) {
+      preview.setDescription(formatPlaceholders(interaction.member, interaction.guild, embedData.description));
+    }
+    if (embedData.color) {
+      const safeColor = convertColor(embedData.color);
+      if (safeColor !== null) preview.setColor(safeColor);
+    }
     if (Array.isArray(embedData.fields) && embedData.fields.length) {
       preview.setFields(embedData.fields.map(f => ({
         name  : formatPlaceholders(interaction.member, interaction.guild, f.name),
@@ -64,9 +72,15 @@ module.exports = {
         iconURL: embedData.footer.icon_url
       });
     }
-    if (embedData.timestamp)   preview.setTimestamp();
-    if (embedData.image?.url)  preview.setImage(embedData.image.url);
-    if (embedData.thumbnail?.url) preview.setThumbnail(embedData.thumbnail.url);
+    if (embedData.timestamp) {
+      preview.setTimestamp();
+    }
+    if (embedData.image?.url) {
+      preview.setImage(embedData.image.url);
+    }
+    if (embedData.thumbnail?.url) {
+      preview.setThumbnail(embedData.thumbnail.url);
+    }
 
     // update tracked message
     const tracker  = fs.existsSync(trackPath)
@@ -78,7 +92,9 @@ module.exports = {
         const channel = await interaction.client.channels.fetch(location.channelId);
         const message = await channel.messages.fetch(location.messageId);
         await message.edit({ embeds: [preview] });
-      } catch {}
+      } catch (err) {
+        console.error('Failed to update tracked message:', err);
+      }
     }
 
     return interaction.reply({ content: 'Embed footer updated.', flags: 64 });

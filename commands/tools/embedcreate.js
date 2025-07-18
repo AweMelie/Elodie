@@ -1,4 +1,3 @@
-// commands/mod/embedcreate.js
 const {
   SlashCommandBuilder,
   EmbedBuilder,
@@ -7,6 +6,7 @@ const {
   ButtonStyle
 } = require('discord.js');
 const formatPlaceholders = require('../../utils/formatPlaceholders');
+const convertColor = require('../../utils/convertColor'); // ⬅️ NEW
 const {
   ensureGuildStorage,
   loadConfig,
@@ -67,9 +67,9 @@ module.exports = {
           formatPlaceholders(interaction.member, interaction.guild, rawEmbed.description)
         );
       }
-      if (rawEmbed.color) {
-        previewEmbed.setColor(rawEmbed.color);
-      }
+      const safeColor = convertColor(rawEmbed.color); // ⬅️ NEW
+      if (safeColor !== null) previewEmbed.setColor(safeColor);
+
       if (Array.isArray(rawEmbed.fields) && rawEmbed.fields.length) {
         previewEmbed.setFields(
           rawEmbed.fields.map(f => ({

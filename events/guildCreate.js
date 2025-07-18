@@ -2,6 +2,7 @@
 const { loadGlobalWelcome } = require('../utils/storageManager');
 const { EmbedBuilder }      = require('discord.js');
 const formatPlaceholders    = require('../utils/formatPlaceholders');
+const convertColor          = require('../utils/convertColor'); // ⬅️ NEW
 
 module.exports = {
   name: 'guildCreate',
@@ -11,7 +12,7 @@ module.exports = {
 
     // 1️⃣ Load your global welcome-DM config
     const cfg = loadGlobalWelcome();
-    if (!cfg) return; // you haven't run /setwelcdm yet
+    if (!cfg) return; // you haven’t run /setwelcdm yet
 
     try {
       // 2️⃣ Fetch the user who added the bot (the guild owner)
@@ -19,20 +20,35 @@ module.exports = {
 
       // 3️⃣ Build the embed from that global config
       const embed = new EmbedBuilder();
-      if (cfg.title)       embed.setTitle(formatPlaceholders(owner, guild, cfg.title));
-      if (cfg.description) embed.setDescription(formatPlaceholders(owner, guild, cfg.description));
-      embed.setColor(cfg.color || '#5865F2');
 
+      // Title & description
+      if (cfg.title) {
+        embed.setTitle(formatPlaceholders(owner, guild, cfg.title));
+      }
+      if (cfg.description) {
+        embed.setDescription(formatPlaceholders(owner, guild, cfg.description));
+      }
+
+      // Safe color conversion (fallback to Discord blurple if none)
+      const defaultHex = '#5865F2';
+      const rawHex     = cfg.color || defaultHex;
+      const safeColor  = convertColor(rawHex);
+      if (safeColor !== null) {
+        embed.setColor(safeColor);
+      }
+
+      // Optional fields array
       if (Array.isArray(cfg.fields) && cfg.fields.length) {
         embed.setFields(
           cfg.fields.map(f => ({
-            name:  formatPlaceholders(owner, guild, f.name),
-            value: formatPlaceholders(owner, guild, f.value),
-            inline: f.inline
+            name:   formatPlaceholders(owner, guild, f.name),
+            value:  formatPlaceholders(owner, guild, f.value),
+            inline: !!f.inline
           }))
         );
       }
 
+      // Optional author
       if (cfg.author?.name) {
         embed.setAuthor({
           name:    formatPlaceholders(owner, guild, cfg.author.name),
@@ -40,6 +56,7 @@ module.exports = {
         });
       }
 
+      // Optional footer
       if (cfg.footer?.text) {
         embed.setFooter({
           text:    formatPlaceholders(owner, guild, cfg.footer.text),
@@ -47,9 +64,16 @@ module.exports = {
         });
       }
 
-      if (cfg.image?.url)     embed.setImage(cfg.image.url);
-      if (cfg.thumbnail?.url) embed.setThumbnail(cfg.thumbnail.url);
-      if (cfg.timestamp)      embed.setTimestamp();
+      // Optional image, thumbnail, timestamp
+      if (cfg.image?.url) {
+        embed.setImage(cfg.image.url);
+      }
+      if (cfg.thumbnail?.url) {
+        embed.setThumbnail(cfg.thumbnail.url);
+      }
+      if (cfg.timestamp) {
+        embed.setTimestamp();
+      }
 
       // 4️⃣ DM the owner
       await owner.send({ embeds: [embed] });

@@ -6,7 +6,8 @@ const {
   ButtonBuilder,
   ButtonStyle
 } = require('discord.js');
-const formatPlaceholders = require('../../utils/formatPlaceholders');
+const formatPlaceholders  = require('../../utils/formatPlaceholders');
+const convertColor        = require('../../utils/convertColor');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -34,18 +35,18 @@ module.exports = {
 
     try {
       // 2️⃣ Load saved embeds
-      const embeds = loadConfig(guildId, 'embeds.json');
+      const embeds    = loadConfig(guildId, 'embeds.json');
       if (Object.keys(embeds).length === 0) {
         return interaction.reply({
           content: '❌ No saved embeds found.',
-          flags: 64
+          ephemeral: true
         });
       }
       const embedData = embeds[embedName];
       if (!embedData) {
         return interaction.reply({
           content: `❌ Embed \`${embedName}\` not found.`,
-          flags: 64
+          ephemeral: true
         });
       }
 
@@ -62,7 +63,10 @@ module.exports = {
         );
       }
       if (embedData.color) {
-        previewEmbed.setColor(embedData.color);
+        const safeColor = convertColor(embedData.color);
+        if (safeColor !== null) {
+          previewEmbed.setColor(safeColor);
+        }
       }
       if (Array.isArray(embedData.fields) && embedData.fields.length) {
         previewEmbed.setFields(
@@ -117,14 +121,15 @@ module.exports = {
         content: [
           `Editing embed: \`${embedName}\``,
           `Use it in messages with \`{embed:${embedName}}\``,
-          `Example: to \`Thanks {user}! {embed:${embedName}}\``
+          `Example: \`Thanks {user}! {embed:${embedName}}\``
         ].join('\n'),
-        embeds: [previewEmbed],
-        components: [row]
+        embeds:     [previewEmbed],
+        components: [row],
+        ephemeral:  true
       });
 
       // 6️⃣ Track this preview message
-      const sent = await interaction.fetchReply();
+      const sent    = await interaction.fetchReply();
       const tracker = loadConfig(guildId, 'embed-messages.json');
       tracker[embedName] = {
         channelId: sent.channel.id,
@@ -136,7 +141,7 @@ module.exports = {
       console.error('❌ Error in /embededit:', error);
       const replyPayload = {
         content: 'Something went wrong while editing your embed.',
-        flags: 64
+        ephemeral: true
       };
       if (interaction.replied || interaction.deferred) {
         await interaction.followUp(replyPayload);

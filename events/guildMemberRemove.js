@@ -5,12 +5,13 @@ const {
   loadConfig
 } = require('../utils/storageManager');
 const formatPlaceholders = require('../utils/formatPlaceholders');
+const convertColor       = require('../utils/convertColor');
 
 function formatDuration(ms) {
-  const sec = Math.floor(ms / 1000);
-  const min = Math.floor(sec / 60);
+  const sec  = Math.floor(ms / 1000);
+  const min  = Math.floor(sec / 60);
   if (min < 60) return `${min} minute${min === 1 ? '' : 's'} ago`;
-  const hr = Math.floor(min / 60);
+  const hr   = Math.floor(min / 60);
   if (hr < 24) return `${hr} hour${hr === 1 ? '' : 's'} ago`;
   const days = Math.floor(hr / 24);
   if (days < 7) return `${days} day${days === 1 ? '' : 's'} ago`;
@@ -44,12 +45,18 @@ module.exports = {
 
         let leaveEmbed = null;
         if (embedName && savedEmbeds[embedName]) {
-          leaveEmbed = EmbedBuilder.from(savedEmbeds[embedName]);
+          const rawEmbed = savedEmbeds[embedName];
+          const embed    = EmbedBuilder.from(rawEmbed);
+          const safeColor = convertColor(rawEmbed.color);
+          if (safeColor !== null) {
+            embed.setColor(safeColor);
+          }
+          leaveEmbed = embed;
         }
 
         await leaveChannel.send({
           content: text,
-          embeds: leaveEmbed ? [leaveEmbed] : []
+          embeds:  leaveEmbed ? [leaveEmbed] : []
         });
       }
     }
@@ -61,9 +68,9 @@ module.exports = {
     const logChannel = member.guild.channels.cache.get(logChannelId);
     if (!logChannel) return;
 
-    const joinedAt   = member.joinedTimestamp;
-    const duration   = Date.now() - joinedAt;
-    const stayedFor  = formatDuration(duration);
+    const joinedAt  = member.joinedTimestamp;
+    const duration  = Date.now() - joinedAt;
+    const stayedFor = formatDuration(duration);
 
     const roles = member.roles.cache
       .filter(r => r.id !== member.guild.id)
@@ -74,11 +81,11 @@ module.exports = {
       .setTitle('Member Left')
       .setColor(0xff9900)
       .addFields(
-        { name: 'User',         value: member.user.tag,       inline: true },
-        { name: 'User ID',      value: `\`${member.id}\``,     inline: true },
-        { name: 'Display Name', value: member.displayName,     inline: true },
-        { name: 'Time on Server', value: stayedFor,           inline: true },
-        { name: 'Roles Held',   value: roles,                  inline: false }
+        { name: 'User',           value: member.user.tag,           inline: true },
+        { name: 'User ID',        value: `\`${member.id}\``,         inline: true },
+        { name: 'Display Name',   value: member.displayName,         inline: true },
+        { name: 'Time on Server', value: stayedFor,                  inline: true },
+        { name: 'Roles Held',     value: roles,                      inline: false }
       );
 
     await logChannel.send({ embeds: [leaveLog] });

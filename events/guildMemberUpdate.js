@@ -1,10 +1,10 @@
-// events/guildMemberUpdate.js
 const { EmbedBuilder } = require('discord.js');
 const {
   ensureGuildStorage,
   loadConfig
 } = require('../utils/storageManager');
 const formatPlaceholders = require('../utils/formatPlaceholders');
+const convertColor       = require('../utils/convertColor'); // ⬅️ NEW
 
 module.exports = {
   name: 'guildMemberUpdate',
@@ -34,7 +34,16 @@ module.exports = {
       // build optional embed
       let boostEmbed = null;
       if (embedName && savedEmbeds[embedName]) {
-        boostEmbed = EmbedBuilder.from(savedEmbeds[embedName]);
+        const rawEmbed = savedEmbeds[embedName];
+        const embed    = EmbedBuilder.from(rawEmbed);
+
+        // convert & apply saved hex-color
+        const safeColor = convertColor(rawEmbed.color);
+        if (safeColor !== null) {
+          embed.setColor(safeColor);
+        }
+
+        boostEmbed = embed;
       }
 
       // send boost announcement

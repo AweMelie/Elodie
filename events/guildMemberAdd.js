@@ -5,6 +5,7 @@ const {
   loadConfig
 } = require('../utils/storageManager');
 const formatPlaceholders = require('../utils/formatPlaceholders');
+const convertColor       = require('../utils/convertColor'); // ⬅️ NEW
 
 module.exports = {
   name: 'guildMemberAdd',
@@ -31,12 +32,21 @@ module.exports = {
 
         let welcomeEmbed = null;
         if (embedName && savedEmbeds[embedName]) {
-          welcomeEmbed = EmbedBuilder.from(savedEmbeds[embedName]);
+          const rawEmbed = savedEmbeds[embedName];
+          const embed    = EmbedBuilder.from(rawEmbed);
+
+          // convert hex color to int if needed
+          const safeColor = convertColor(rawEmbed.color);
+          if (safeColor !== null) {
+            embed.setColor(safeColor);
+          }
+
+          welcomeEmbed = embed;
         }
 
         await channel.send({
           content: text,
-          embeds: welcomeEmbed ? [welcomeEmbed] : []
+          embeds:  welcomeEmbed ? [welcomeEmbed] : []
         });
       }
     }
@@ -52,28 +62,28 @@ module.exports = {
           .setTimestamp()
           .addFields(
             {
-              name: 'Username',
-              value: `${member.user.tag}`,
+              name:   'Username',
+              value:  `${member.user.tag}`,
               inline: true
             },
             {
-              name: 'User ID',
-              value: `\`${member.id}\``,
+              name:   'User ID',
+              value:  `\`${member.id}\``,
               inline: true
             },
             {
-              name: 'Display Name',
-              value: `${member.displayName}`,
+              name:   'Display Name',
+              value:  `${member.displayName}`,
               inline: true
             },
             {
-              name: 'Account Created',
-              value: `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`,
+              name:   'Account Created',
+              value:  `<t:${Math.floor(member.user.createdTimestamp / 1000)}:F>`,
               inline: true
             },
             {
-              name: 'Joined Server',
-              value: `<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`,
+              name:   'Joined Server',
+              value:  `<t:${Math.floor(member.joinedTimestamp / 1000)}:F>`,
               inline: true
             }
           )

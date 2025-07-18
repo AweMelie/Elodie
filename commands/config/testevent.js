@@ -1,10 +1,10 @@
-// commands/config/testevent.js
 const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
 const {
   ensureGuildStorage,
   loadConfig
 } = require('../../utils/storageManager');
 const formatPlaceholders = require('../../utils/formatPlaceholders');
+const convertColor = require('../../utils/convertColor'); // ⬅️ NEW
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -30,7 +30,7 @@ module.exports = {
 
     // 1️⃣ Ensure storage and load configs
     ensureGuildStorage(guildId);
-    const events     = loadConfig(guildId, 'server-events.json');
+    const events      = loadConfig(guildId, 'server-events.json');
     const savedEmbeds = loadConfig(guildId, 'embeds.json');
 
     // 2️⃣ Verify channel & message templates exist
@@ -63,10 +63,16 @@ module.exports = {
     const rawMessage = messageTemplate.replace(/\{embed:[\w-]+\}/, '').trim();
     const formatted  = formatPlaceholders(member, interaction.guild, rawMessage);
 
-    // 5️⃣ Load embed object if referenced
+    // 5️⃣ Load and clean embed if referenced
     let logEmbed = null;
     if (embedName && savedEmbeds[embedName]) {
-      logEmbed = EmbedBuilder.from(savedEmbeds[embedName]);
+      const raw = savedEmbeds[embedName];
+      const embed = EmbedBuilder.from(raw);
+
+      const safeColor = convertColor(raw.color);
+      if (safeColor !== null) embed.setColor(safeColor);
+
+      logEmbed = embed;
     }
 
     // 6️⃣ Send the test

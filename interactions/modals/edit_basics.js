@@ -3,6 +3,7 @@ const fs = require('fs');
 const path = require('path');
 const { EmbedBuilder } = require('discord.js');
 const formatPlaceholders = require('../../utils/formatPlaceholders');
+const convertColor = require('../../utils/convertColor');
 
 module.exports = {
   customId: 'edit_basics',
@@ -39,9 +40,16 @@ module.exports = {
 
     // Rebuild preview
     const preview = new EmbedBuilder();
-    if (embedData.title)       preview.setTitle(formatPlaceholders(interaction.member, interaction.guild, embedData.title));
-    if (embedData.description) preview.setDescription(formatPlaceholders(interaction.member, interaction.guild, embedData.description));
-    if (embedData.color)       preview.setColor(embedData.color);
+    if (embedData.title) {
+      preview.setTitle(formatPlaceholders(interaction.member, interaction.guild, embedData.title));
+    }
+    if (embedData.description) {
+      preview.setDescription(formatPlaceholders(interaction.member, interaction.guild, embedData.description));
+    }
+    if (embedData.color) {
+      const safeColor = convertColor(embedData.color);
+      if (safeColor !== null) preview.setColor(safeColor);
+    }
 
     if (Array.isArray(embedData.fields) && embedData.fields.length) {
       preview.setFields(embedData.fields.map(f => ({
