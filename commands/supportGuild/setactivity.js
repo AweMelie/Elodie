@@ -1,38 +1,53 @@
 // commands/supportGuild/setactivity.js
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder, ActivityType } = require('discord.js');
 
 module.exports = {
   data: new SlashCommandBuilder()
     .setName('setactivity')
-    .setDescription('Update the bot’s activity status')
-    .addStringOption(opt =>
-      opt
+    .setDescription('Change the bot’s presence/activity (owner only)')
+    .addStringOption(option =>
+      option
         .setName('type')
-        .setDescription('Type of activity')
+        .setDescription('Select activity type')
         .setRequired(true)
         .addChoices(
           { name: 'Playing',   value: 'PLAYING' },
+          { name: 'Streaming', value: 'STREAMING' },
           { name: 'Listening', value: 'LISTENING' },
-          { name: 'Watching',  value: 'WATCHING' }
+          { name: 'Watching',  value: 'WATCHING' },
+          { name: 'Competing', value: 'COMPETING' }
         )
     )
-    .addStringOption(opt =>
-      opt
+    .addStringOption(option =>
+      option
         .setName('text')
-        .setDescription('The status text')
+        .setDescription('What the bot should display')
         .setRequired(true)
     ),
-  async execute(interaction) {
-    const type = interaction.options.getString('type');
-    const text = interaction.options.getString('text');
 
+  async execute(interaction) {
+    // Owner-only guard
+    if (interaction.user.id !== process.env.OWNER_ID) {
+      return interaction.reply({
+        content: '❌ You don’t have permission to run this.',
+        ephemeral: true
+      });
+    }
+
+    // Grab the raw choice, then map to the ActivityType enum
+    const typeKey = interaction.options.getString('type');      // e.g. "PLAYING"
+    const type    = ActivityType[typeKey];                      // resolves to the numeric enum
+    const text    = interaction.options.getString('text');
+
+    // Update the bot’s presence
     await interaction.client.user.setPresence({
       activities: [{ name: text, type }],
       status: 'online'
     });
 
+    // Confirm to the owner
     return interaction.reply({
-      content: `Activity set to **${type.toLowerCase()} ${text}**`,
+      content: `✅ Presence updated to **${typeKey.toLowerCase()} ${text}**`,
       ephemeral: true
     });
   }
