@@ -30,28 +30,59 @@ module.exports = {
     const embedName = interaction.options.getString('embed');
     const guildId   = interaction.guild.id;
 
-    // 1️⃣ Ensure storage folder & default files exist
+    // Ensure storage folder & default files exist
     ensureGuildStorage(guildId);
 
     try {
-      // 2️⃣ Load saved embeds
-      const embeds    = loadConfig(guildId, 'embeds.json');
+      // Load saved embeds
+      const embeds = loadConfig(guildId, 'embeds.json') || {};
       if (Object.keys(embeds).length === 0) {
         return interaction.reply({
           content: '❌ No saved embeds found.',
-          ephemeral: true
-        });
-      }
-      const embedData = embeds[embedName];
-      if (!embedData) {
-        return interaction.reply({
-          content: `❌ Embed \`${embedName}\` not found.`,
-          ephemeral: true
+          flags: 64
         });
       }
 
-      // 3️⃣ Build live-preview embed
+      // Get the specific embed data
+      const rawData = embeds[embedName];
+      if (!rawData) {
+        return interaction.reply({
+          content: `❌ Embed \`${embedName}\` not found.`,
+          flags: 64
+        });
+      }
+
+      // Merge into a full default skeleton to avoid undefineds
+      const defaultCfg = {
+        title:       null,
+        description: null,
+        color:       '#5865F2',
+        author:      { name: null,   icon_url: null },
+        footer:      { text: null,   icon_url: null },
+        thumbnail:   { url:  null },
+        image:       { url:  null },
+        fields:      []
+      };
+      const embedData = { ...defaultCfg, ...rawData };
+      // ensure nested objects exist
+      embedData.author    = { ...defaultCfg.author,    ...rawData.author    };
+      embedData.footer    = { ...defaultCfg.footer,    ...rawData.footer    };
+      embedData.thumbnail = { ...defaultCfg.thumbnail, ...rawData.thumbnail };
+      embedData.image     = { ...defaultCfg.image,     ...rawData.image     };
+      embedData.fields    = Array.isArray(rawData.fields)
+        ? rawData.fields
+        : defaultCfg.fields;
+
+      // Build live‐preview embed
       const previewEmbed = new EmbedBuilder();
+
+      // Safe color parsing with fallback
+      const hex = embedData.color || defaultCfg.color;
+      const safe = convertColor(hex);
+      if (safe !== null) {
+        previewEmbed.setColor(safe);
+      }
+
       if (embedData.title) {
         previewEmbed.setTitle(
           formatPlaceholders(interaction.member, interaction.guild, embedData.title)
@@ -61,12 +92,6 @@ module.exports = {
         previewEmbed.setDescription(
           formatPlaceholders(interaction.member, interaction.guild, embedData.description)
         );
-      }
-      if (embedData.color) {
-        const safeColor = convertColor(embedData.color);
-        if (safeColor !== null) {
-          previewEmbed.setColor(safeColor);
-        }
       }
       if (Array.isArray(embedData.fields) && embedData.fields.length) {
         previewEmbed.setFields(
@@ -96,27 +121,30 @@ module.exports = {
         previewEmbed.setImage(embedData.image.url);
       }
 
-      // 4️⃣ Prepare edit buttons
+      // Prepare edit buttons
       const row = new ActionRowBuilder().addComponents(
         new ButtonBuilder()
           .setCustomId(`edit_basics:${embedName}`)
           .setLabel('Edit Basic Info')
           .setStyle(ButtonStyle.Secondary),
+
         new ButtonBuilder()
           .setCustomId(`edit_author:${embedName}`)
           .setLabel('Edit Author')
           .setStyle(ButtonStyle.Secondary),
+
         new ButtonBuilder()
           .setCustomId(`edit_footer:${embedName}`)
           .setLabel('Edit Footer')
           .setStyle(ButtonStyle.Secondary),
+
         new ButtonBuilder()
           .setCustomId(`edit_images:${embedName}`)
           .setLabel('Edit Images')
           .setStyle(ButtonStyle.Secondary)
       );
 
-      // 5️⃣ Send the edit-mode preview
+      // Send the edit‐mode preview
       await interaction.reply({
         content: [
           `Editing embed: \`${embedName}\``,
@@ -125,12 +153,11 @@ module.exports = {
         ].join('\n'),
         embeds:     [previewEmbed],
         components: [row],
-        ephemeral:  true
       });
 
-      // 6️⃣ Track this preview message
+      // Track this ephemeral preview (if you need to reference it later)
       const sent    = await interaction.fetchReply();
-      const tracker = loadConfig(guildId, 'embed-messages.json');
+      const tracker = loadConfig(guildId, 'embed-messages.json') || {};
       tracker[embedName] = {
         channelId: sent.channel.id,
         messageId: sent.id
@@ -139,14 +166,14 @@ module.exports = {
 
     } catch (error) {
       console.error('❌ Error in /embededit:', error);
-      const replyPayload = {
+      const payload = {
         content: 'Something went wrong while editing your embed.',
-        ephemeral: true
+        flags: 64
       };
       if (interaction.replied || interaction.deferred) {
-        await interaction.followUp(replyPayload);
+        await interaction.followUp(payload);
       } else {
-        await interaction.reply(replyPayload);
+        await interaction.reply(payload);
       }
     }
   }
