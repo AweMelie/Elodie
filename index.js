@@ -21,4 +21,10 @@ loaders(client);                   // wires commands, events, buttons, modals
 registerProcessHandlers();         // your process.on('unhandledRejection') logic
 
 console.log('🔄 Starting bot...');
-client.login(process.env.TOKEN);
+client.login(process.env.TOKEN)
+  .then(() => console.log('✅ Login successful'))
+  .catch(err => console.error('❌ Login failed:', err));
+
+  client.once('ready', () => {
+  console.log(`✅ Elodie is online as ${client.user.tag}`);
+});

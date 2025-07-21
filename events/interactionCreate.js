@@ -1,4 +1,3 @@
-// events/interactionCreate.js
 const fs = require('fs');
 const path = require('path');
 const {
@@ -62,7 +61,18 @@ module.exports = {
     // ─── Button Interactions
     if (interaction.isButton()) {
       const [action] = interaction.customId.split(':');
-      const handler = interaction.client.buttons.get(action);
+      let handler = interaction.client.buttons.get(action);
+
+      // Try matching dynamic buttons (e.g. RegExp-based handlers)
+      if (!handler) {
+        for (const [key, mod] of interaction.client.buttons.entries()) {
+          if (key instanceof RegExp && key.test(interaction.customId)) {
+            handler = mod;
+            break;
+          }
+        }
+      }
+
       if (handler) return handler.execute(interaction);
     }
 

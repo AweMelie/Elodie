@@ -1,4 +1,3 @@
-// loaders/loadButtons.js
 const { readdirSync } = require('fs');
 const { join }        = require('path');
 
@@ -8,9 +7,15 @@ module.exports = client => {
   const files = readdirSync(dir).filter(f => f.endsWith('.js'));
 
   for (const file of files) {
-    const mod = require(join(dir, file));
-    client.buttons.set(mod.customId, mod);
+    const filePath = join(dir, file);
+    const mod = require(filePath);
+
+    if (mod.customId && mod.execute) {
+      client.buttons.set(mod.customId, mod);
+    } else {
+      console.warn(`[WARN] button ${file} is missing customId or execute.`);
+    }
   }
 
-  console.log(`✅ Loaded ${files.length} button handlers`);
+  console.log(`✅ Loaded ${client.buttons.size} button handlers`);
 };

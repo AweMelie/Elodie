@@ -16,49 +16,73 @@ module.exports = {
   async execute(interaction) {
     const game = activeGames.get(interaction.message.id);
     if (!game) {
-      return interaction.reply({ content: 'Game not found.', ephemeral: true });
+      return interaction.reply({ content: 'Game not found.', flags: 64 });
     }
 
     const { challengerId, opponentId, currentTurn, boardState } = game;
 
     if (![challengerId, opponentId].includes(interaction.user.id)) {
-      return interaction.reply({ content: 'You’re not part of this match.', ephemeral: true });
+      return interaction.reply({ content: 'You’re not part of this match.', flags: 64 });
     }
 
     if (interaction.user.id !== currentTurn) {
-      return interaction.reply({ content: 'It’s not your turn yet!', ephemeral: true });
+      return interaction.reply({ content: 'It’s not your turn yet!', flags: 64 });
     }
 
     const index = parseInt(interaction.customId.split('_')[1]);
     if (boardState[index] !== null) {
-      return interaction.reply({ content: 'Someone already played here!', ephemeral: true });
+      return interaction.reply({ content: 'Someone already played here!', flags: 64 });
     }
 
     const symbol = currentTurn === challengerId ? 'X' : 'O';
     boardState[index] = symbol;
 
+    const container = renderTictactoeContainer(boardState, challengerId, opponentId);
+
+    // 🏆 Win condition
     if (checkWin(boardState, symbol)) {
-      const container = renderTictactoeContainer(boardState, challengerId, opponentId);
       activeGames.delete(interaction.message.id);
 
-      return interaction.update({
-        ...container,
+      // First update the board with the final move
+      await interaction.update(container);
+
+      // Then announce winner
+      await interaction.followUp({
         content: `🎉 <@${interaction.user.id}> wins!`,
-        components: []
       });
+
+      // Finally disable buttons on the original message
+      for (const row of container.components) {
+        for (const button of row.components) {
+          if (typeof button?.setDisabled === 'function') {
+            button.setDisabled(true);
+          }
+        }
+      }
+
+      await interaction.message.edit(container);
+      return;
     }
 
+    // 🤝 Draw condition
     if (boardState.every(cell => cell !== null)) {
       activeGames.delete(interaction.message.id);
-      return interaction.update({
+
+      // Update board showing final state
+      await interaction.update(container);
+
+      // Announce draw
+      await interaction.followUp({
         content: `It's a draw! 🤝`,
-        components: []
       });
+
+      await interaction.message.edit(container);
+      return;
     }
 
+    // 🔁 Continue game
     game.currentTurn = currentTurn === challengerId ? opponentId : challengerId;
 
-    const container = renderTictactoeContainer(boardState, challengerId, opponentId);
     await interaction.update(container);
   }
 };
