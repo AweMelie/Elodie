@@ -11,7 +11,10 @@ module.exports = client => {
       .filter(f => f.endsWith('.js'));
 
     for (const file of files) {
-      const cmd = require(join(commandsPath, folder, file));
+      const filePath = join(commandsPath, folder, file);
+      console.log('🧠 Trying to load:', filePath);
+      const cmd = require(filePath);
+
       if (cmd.data && cmd.execute) {
         client.commands.set(cmd.data.name, cmd);
       } else {

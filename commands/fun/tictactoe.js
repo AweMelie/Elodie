@@ -46,3 +46,4 @@ module.exports = {
     });
   }
 };
+console.log('Exported command object:', module.exports);
