@@ -7,6 +7,7 @@ module.exports = function renderTictactoeContainer(boardState = Array(9).fill(nu
       cell === 'O' ? '⭕' :
       '\u200B',
     custom_id: `p_${i}`,
+    disabled: cell !== null,
     flow: { actions: [] }
   }));
 
