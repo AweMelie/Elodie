@@ -11,7 +11,6 @@ module.exports = function renderTictactoeContainer(boardState = Array(9).fill(nu
     flow: { actions: [] }
   }));
 
-  // Split buttons into rows of 3
   const rows = [0, 1, 2].map(r => ({
     type: 1,
     components: buttons.slice(r * 3, r * 3 + 3)
@@ -21,10 +20,10 @@ module.exports = function renderTictactoeContainer(boardState = Array(9).fill(nu
     flags: 32768,
     components: [
       {
-        type: 17, // Container
+        type: 17,
         components: [
           {
-            type: 10, // Content block
+            type: 10,
             content: `## Tic Tac Toe Challenge\n### <@${challengerId}>❌ vs <@${challengeeId}>⭕`
           },
           ...rows

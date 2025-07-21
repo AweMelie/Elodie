@@ -1,14 +1,9 @@
 const renderTictactoeContainer = require('../../utils/containers/renderTictactoeContainer');
-
 const activeGames = require('../../utils/gameState');
 
 module.exports = {
   customId: /^tictactoe_(accept|decline)_/,
   async execute(interaction) {
-    console.log('Custom ID:', interaction.customId);
-    console.log('Split parts:', interaction.customId.split('_'));
-    console.log('Clicked by:', interaction.user.id);
-
     const [_, action, challengerId, opponentId] = interaction.customId.split('_');
 
     if (interaction.user.id !== opponentId) {
@@ -25,7 +20,6 @@ module.exports = {
       });
     }
 
-    // Start the game
     const boardState = Array(9).fill(null);
     activeGames.set(interaction.message.id, {
       challengerId,
@@ -35,7 +29,6 @@ module.exports = {
     });
 
     const container = renderTictactoeContainer(boardState, challengerId, opponentId);
-
     await interaction.update(container);
   }
 };
