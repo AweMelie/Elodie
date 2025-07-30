@@ -1,5 +1,6 @@
 // commands/config/leavemessage.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -30,7 +31,7 @@ module.exports = {
     events.leaveMessage = messageContent;
     saveConfig(guildId, 'server-events.json', events);
 
-    // 3️⃣ Ephemeral confirmation
+    // 3️⃣ Confirm silently
     await interaction.reply({
       content: `🎉 Leave message saved!\n\nNew message:\n\`\`\`\n${messageContent}\n\`\`\``,
       flags: 64

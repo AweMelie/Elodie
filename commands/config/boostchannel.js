@@ -1,5 +1,6 @@
 // commands/config/boostchannel.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -30,10 +31,10 @@ module.exports = {
     events.boostChannel = selectedChannel.id;
     saveConfig(guildId, 'server-events.json', events);
 
-    // 3️⃣ Ephemeral confirmation
+    // 3️⃣ Confirm update with hidden reply
     await interaction.reply({
       content: `✅ Boost messages will be sent to ${selectedChannel}`,
-      flags: 64
+      flags: 64 // = MessageFlags.SuppressEmbeds + Ephemeral response
     });
   }
 };

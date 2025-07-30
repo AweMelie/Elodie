@@ -1,6 +1,6 @@
 // commands/moderation/unban.js
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
-  SlashCommandBuilder,
   PermissionFlagsBits,
   EmbedBuilder
 } = require('discord.js');

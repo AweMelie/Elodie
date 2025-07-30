@@ -1,5 +1,6 @@
 // commands/config/leavechannel.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -30,10 +31,10 @@ module.exports = {
     events.leaveChannel = selectedChannel.id;
     saveConfig(guildId, 'server-events.json', events);
 
-    // 3️⃣ Ephemeral confirmation
+    // 3️⃣ Confirm silently
     await interaction.reply({
       content: `✅ Leave messages will be sent to ${selectedChannel}`,
-      flags: 64
+      flags: 64 // Silent response, no embed preview
     });
   }
 };

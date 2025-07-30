@@ -1,5 +1,6 @@
 // commands/config/countchannel.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -31,7 +32,7 @@ module.exports = {
       config.countChannel = channel.id;
       saveConfig(guildId, 'config.json', config);
 
-      // 3️⃣ Ephemeral confirmation
+      // 3️⃣ Confirm silently
       await interaction.reply({
         content: `✅ Counting channel set to <#${channel.id}>.`,
         flags: 64

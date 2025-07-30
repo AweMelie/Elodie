@@ -1,4 +1,6 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder } = require('discord.js');
+const getGif = require('../../utils/getGif'); // adjust path if needed
 
 module.exports = {
   data: new SlashCommandBuilder()
@@ -7,17 +9,13 @@ module.exports = {
     .addUserOption(option =>
       option.setName('target')
         .setDescription('User to slap')
-        .setRequired(true)),
+        .setRequired(true)
+    ),
 
   async execute(interaction) {
     const targetUser = interaction.options.getUser('target');
 
-    if (targetUser.id === interaction.user.id) {
-      return await interaction.reply({
-        content: '😵 You tried to slap yourself... everything okay?',
-        flags: 64 // 🙈 Ephemeral and compliant
-      });
-    }
+    const gifUrl = await getGif('anime slap');
 
     const objects = [
       'a NFT of a screaming pigeon',
@@ -38,8 +36,23 @@ module.exports = {
 
     const randomObject = objects[Math.floor(Math.random() * objects.length)];
 
+    if (targetUser.id === interaction.user.id) {
+      const embed = new EmbedBuilder()
+        .setDescription('😵 You tried to slap yourself... everything okay?')
+        .setImage(gifUrl || null);
+
+      return await interaction.reply({
+        embeds: [embed],
+        flags: 64
+      });
+    }
+
+    const embed = new EmbedBuilder()
+      .setDescription(`💢 <@${interaction.user.id}> slapped <@${targetUser.id}> with ${randomObject}!`)
+      .setImage(gifUrl || null);
+
     await interaction.reply({
-      content: `💢 <@${interaction.user.id}> slapped <@${targetUser.id}> with ${randomObject}!`,
+      embeds: [embed],
       allowedMentions: { users: [interaction.user.id, targetUser.id] }
     });
   }

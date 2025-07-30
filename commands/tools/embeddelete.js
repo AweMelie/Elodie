@@ -1,5 +1,5 @@
 // commands/mod/embeddelete.js
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,

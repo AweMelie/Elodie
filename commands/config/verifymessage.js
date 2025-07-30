@@ -1,5 +1,6 @@
 // commands/config/verifymessage.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -26,19 +27,27 @@ module.exports = {
     // 1️⃣ Ensure storage folder & default files exist
     ensureGuildStorage(guildId);
 
-    // 2️⃣ Load, update, and save server-events.json
-    const events = loadConfig(guildId, 'server-events.json');
-    events.verifyMessage = messageContent;
-    saveConfig(guildId, 'server-events.json', events);
+    try {
+      // 2️⃣ Load, update, and save server-events.json
+      const events = loadConfig(guildId, 'server-events.json');
+      events.verifyMessage = messageContent;
+      saveConfig(guildId, 'server-events.json', events);
 
-    // 3️⃣ Optional preview for debugging
-    const preview = formatPlaceholders(interaction.member, interaction.guild, messageContent);
-    console.log(`Verify message preview for guild ${guildId}:`, preview);
+      // 3️⃣ Optional preview for debugging
+      const preview = formatPlaceholders(interaction.member, interaction.guild, messageContent);
+      console.log(`Verify message preview for guild ${guildId}:`, preview);
 
-    // 4️⃣ Ephemeral confirmation
-    await interaction.reply({
-      content: `✅ Verify message saved!\n\nNew message:\n\`\`\`\n${messageContent}\n\`\`\``,
-      flags: 64
-    });
+      // 4️⃣ Ephemeral confirmation
+      await interaction.reply({
+        content: `✅ Verify message saved!\n\nNew message:\n\`\`\`\n${messageContent}\n\`\`\``,
+        flags: 64
+      });
+    } catch (err) {
+      console.error('Error writing verifyMessage:', err);
+      await interaction.reply({
+        content: '❌ Failed to save the verify message.',
+        flags: 64
+      });
+    }
   }
 };

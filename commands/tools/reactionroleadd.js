@@ -1,4 +1,4 @@
-const { SlashCommandBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const { loadReactionRoles, saveReactionRoles } = require('../../utils/storageManager');
 
 module.exports = {

@@ -1,6 +1,6 @@
 // commands/supportGuild/setwelcdm.js
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
-  SlashCommandBuilder,
   EmbedBuilder,
   ActionRowBuilder,
   ButtonBuilder,

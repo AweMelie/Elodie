@@ -1,5 +1,6 @@
 // commands/config/boostmessage.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -30,10 +31,10 @@ module.exports = {
     events.boostMessage = messageContent;
     saveConfig(guildId, 'server-events.json', events);
 
-    // 3️⃣ Ephemeral confirmation
+    // 3️⃣ Confirm with a hidden reply
     await interaction.reply({
       content: `🚀 Boost message saved!\n\nNew message:\n\`\`\`\n${messageContent}\n\`\`\``,
-      flags: 64
+      flags: 64 // Silent + no embed previews
     });
   }
 };

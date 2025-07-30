@@ -1,11 +1,13 @@
 // commands/testevent.js
-const { SlashCommandBuilder, EmbedBuilder } = require('discord.js');
+const { EmbedBuilder } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig
 } = require('../../utils/storageManager');
 const formatPlaceholders = require('../../utils/formatPlaceholders');
 const convertColor       = require('../../utils/convertColor');
+
 
 module.exports = {
   data: new SlashCommandBuilder()

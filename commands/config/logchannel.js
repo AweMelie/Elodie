@@ -1,5 +1,6 @@
 // commands/config/logchannel.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -31,7 +32,7 @@ module.exports = {
       config.logChannel = channel.id;
       saveConfig(guildId, 'config.json', config);
 
-      // 3️⃣ Ephemeral confirmation
+      // 3️⃣ Confirm silently
       await interaction.reply({
         content: `✅ Moderation logs will be sent to <#${channel.id}>.`,
         flags: 64

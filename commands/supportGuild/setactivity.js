@@ -1,7 +1,5 @@
-const {
-  SlashCommandBuilder,
-  ActivityType
-} = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
+const { ActivityType } = require('discord.js');
 const fs = require('fs');
 const path = require('path');
 

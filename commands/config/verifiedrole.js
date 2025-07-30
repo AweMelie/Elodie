@@ -1,5 +1,6 @@
 // commands/config/verifiedrole.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -31,7 +32,7 @@ module.exports = {
       config.verifiedRole = role.id;
       saveConfig(guildId, 'config.json', config);
 
-      // 3️⃣ Ephemeral confirmation
+      // 3️⃣ Confirm silently
       await interaction.reply({
         content: `✅ Verified role set to **${role.name}**.`,
         flags: 64

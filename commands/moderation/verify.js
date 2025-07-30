@@ -1,6 +1,6 @@
 // commands/moderation/verify.js
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
-  SlashCommandBuilder,
   PermissionFlagsBits,
   EmbedBuilder
 } = require('discord.js');

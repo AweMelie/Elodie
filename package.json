@@ -13,9 +13,11 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "@discordjs/builders": "^1.11.2",
     "@discordjs/rest": "^2.5.1",
     "discord-api-types": "^0.38.15",
     "discord.js": "^15.0.0-dev.1753014515-a7f711b30",
-    "dotenv": "^17.2.0"
+    "dotenv": "^17.2.0",
+    "node-fetch": "^3.3.2"
   }
 }

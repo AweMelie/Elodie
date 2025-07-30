@@ -1,5 +1,6 @@
 // commands/config/welcomemessage.js
-const { SlashCommandBuilder, PermissionFlagsBits } = require('discord.js');
+const { PermissionFlagsBits } = require('discord.js');
+const { SlashCommandBuilder } = require('@discordjs/builders');
 const {
   ensureGuildStorage,
   loadConfig,
@@ -22,18 +23,23 @@ module.exports = {
     const guildId = interaction.guild.id;
     const messageContent = interaction.options.getString('message');
 
-    // 1️⃣ Ensure storage folder & default files exist
     ensureGuildStorage(guildId);
 
-    // 2️⃣ Load, update, and save server-events.json
-    const events = loadConfig(guildId, 'server-events.json');
-    events.welcomeMessage = messageContent;
-    saveConfig(guildId, 'server-events.json', events);
+    try {
+      const events = loadConfig(guildId, 'server-events.json');
+      events.welcomeMessage = messageContent;
+      saveConfig(guildId, 'server-events.json', events);
 
-    // 3️⃣ Ephemeral confirmation
-    await interaction.reply({
-      content: `🎉 Welcome message saved!\n\nNew message:\n\`\`\`\n${messageContent}\n\`\`\``,
-      flags: 64
-    });
+      await interaction.reply({
+        content: `🎉 Welcome message saved!\n\nNew message:\n\`\`\`\n${messageContent}\n\`\`\``,
+        flags: 64
+      });
+    } catch (err) {
+      console.error('Error saving welcomeMessage:', err);
+      await interaction.reply({
+        content: '❌ Failed to save the welcome message.',
+        flags: 64
+      });
+    }
   }
 };
