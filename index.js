@@ -1,7 +1,6 @@
-// index.js
 require('dotenv').config();
 
-const { Client, Collection, GatewayIntentBits } = require('discord.js');
+const { Client, Collection, GatewayIntentBits, ActivityType } = require('discord.js');
 const loaders = require('./loaders');
 const registerProcessHandlers = require('./utils/registerProcessHandlers');
 
@@ -25,6 +24,15 @@ client.login(process.env.TOKEN)
   .then(() => console.log('✅ Login successful'))
   .catch(err => console.error('❌ Login failed:', err));
 
-  client.once('ready', () => {
+client.once('ready', () => {
   console.log(`✅ Elodie is online as ${client.user.tag}`);
+
+  // 🟢 Set custom status bubble
+  client.user.setPresence({
+    status: 'online',
+    activities: [{
+      name: 'support - https://discord.gg/kmDFcgQepR',
+      type: ActivityType.Custom // type 4 for custom status
+    }]
+  });
 });
