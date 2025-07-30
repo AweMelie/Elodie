@@ -1,11 +1,10 @@
-const fetch = require('node-fetch'); // or just 'fetch' if using Node v18+
-const TENOR_API_KEY = 'AIzaSyAtPQDkv9DrQ485OWwjf7bYxhZjcLThJbA'; // replace with your actual key
+const TENOR_API_KEY = 'AIzaSyAtPQDkv9DrQ485OWwjf7bYxhZjcLThJbA'; // use your actual key here
 
-async function getGif(searchTerm = 'hug') {
+async function getGif(searchTerm = 'anime hug') {
   const url = `https://tenor.googleapis.com/v2/search?q=${encodeURIComponent(searchTerm)}&key=${TENOR_API_KEY}&limit=10&random=true`;
 
   try {
-    const res = await fetch(url);
+    const res = await fetch(url); // native fetch for Node 22 — nice!
     const data = await res.json();
 
     if (data.results?.length > 0) {
