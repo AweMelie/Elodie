@@ -1,10 +1,10 @@
-const { SlashCommandBuilder } = require('@discordjs/builders');
+const { EmbedBuilder } = require('discord.js');
 const {
-  EmbedBuilder,
+  SlashCommandBuilder,
   ActionRowBuilder,
   ButtonBuilder,
   ButtonStyle
-} = require('discord.js');
+} = require('@discordjs/builders');
 const formatPlaceholders = require('../../utils/formatPlaceholders');
 const convertColor = require('../../utils/convertColor'); // ⬅️ NEW
 const {
