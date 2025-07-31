@@ -78,7 +78,7 @@ module.exports = {
         builtEmbed.setThumbnail(rawEmbed.thumbnail.url);
 
       finalEmbeds.push(builtEmbed);
-      finalContent = finalContent.replace(match[0], ''); // remove the {embed:name} tag
+      finalContent = finalContent.replace(/\{embed:[^\}]+\}/g, '');
     }
 
     // Send the message
